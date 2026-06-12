@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Derk Summer 2026 Vacation Planner</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%0A%20%20%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2728%27%20fill%3D%27%23ffffff%27/%3E%0A%20%20%3Cpath%20d%3D%27M32%204%20A28%2028%200%200%201%2056%2018%20L32%2032%20Z%27%20fill%3D%27%23ff6b6b%27/%3E%0A%20%20%3Cpath%20d%3D%27M56%2018%20A28%2028%200%200%201%2052%2050%20L32%2032%20Z%27%20fill%3D%27%23ffd166%27/%3E%0A%20%20%3Cpath%20d%3D%27M52%2050%20A28%2028%200%200%201%2012%2052%20L32%2032%20Z%27%20fill%3D%27%2306d6a0%27/%3E%0A%20%20%3Cpath%20d%3D%27M12%2052%20A28%2028%200%200%201%208%2016%20L32%2032%20Z%27%20fill%3D%27%234cc9f0%27/%3E%0A%20%20%3Cpath%20d%3D%27M8%2016%20A28%2028%200%200%201%2032%204%20L32%2032%20Z%27%20fill%3D%27%239b5de5%27/%3E%0A%20%20%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%276%27%20fill%3D%27%23ffffff%27%20stroke%3D%27%23f3f4f6%27%20stroke-width%3D%272%27/%3E%0A%20%20%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2728%27%20fill%3D%27none%27%20stroke%3D%27%23ffffff%27%20stroke-width%3D%273%27/%3E%0A%3C/svg%3E">
 <style>
   :root {
     --artifact-background: var(--theme-background, #ffffff);
@@ -1523,6 +1524,7 @@
         <div class="quick-filters" id="quickFilters">
           <button class="chip active" data-quick="all" onclick="setQuickFilter('all', event)">All ideas</button>
           <button class="chip" data-quick="unscheduled" onclick="setQuickFilter('unscheduled', event)">Unscheduled</button>
+          <button class="chip" data-quick="scheduled" onclick="setQuickFilter('scheduled', event)">Scheduled</button>
           <button class="chip" data-quick="needs-both-ratings" onclick="setQuickFilter('needs-both-ratings', event)">Needs both ratings</button>
           <button class="chip" data-quick="lillian-ratings" onclick="setQuickFilter('lillian-ratings', event)">Lillian's Ratings</button>
           <button class="chip" data-quick="lizzie-ratings" onclick="setQuickFilter('lizzie-ratings', event)">Lizzie Ratings</button>
@@ -5484,6 +5486,7 @@
   function matchesQuickFilter(activity) {
     if (quickFilter === 'all') return true;
     if (quickFilter === 'unscheduled') return activity.dateId === null;
+    if (quickFilter === 'scheduled') return activity.dateId !== null;
     if (quickFilter === 'needs-both-ratings') return activity.lillianRating === null || activity.lizzieRating === null;
     if (quickFilter === 'lillian-ratings') return activity.lillianRating === null;
     if (quickFilter === 'lizzie-ratings') return activity.lizzieRating === null;
@@ -5521,14 +5524,14 @@
     const conditionFilter = document.getElementById('conditionFilter').value;
     const ratingFilter = document.getElementById('ratingFilter').value;
     const searchTerm = document.getElementById('searchFilter').value.trim().toLowerCase();
-    const daughterRatingMode = ['needs-both-ratings', 'lillian-ratings', 'lizzie-ratings'].includes(quickFilter);
+    const editableScheduledMode = ['scheduled', 'needs-both-ratings', 'lillian-ratings', 'lizzie-ratings'].includes(quickFilter);
 
     pool.innerHTML = '';
 
     const visible = activities.filter(activity => {
       const isScheduled = activity.dateId !== null;
-      if (!daughterRatingMode && statusFilter === 'unscheduled' && isScheduled) return false;
-      if (!daughterRatingMode && statusFilter === 'scheduled' && !isScheduled) return false;
+      if (!editableScheduledMode && statusFilter === 'unscheduled' && isScheduled) return false;
+      if (!editableScheduledMode && statusFilter === 'scheduled' && !isScheduled) return false;
       if (categoryFilter !== 'all' && activity.category !== categoryFilter) return false;
       if (conditionFilter !== 'all' && activity.condition !== conditionFilter) return false;
       if (ratingFilter === 'unrated' && getAverageRating(activity) !== null) return false;
@@ -5541,9 +5544,10 @@
     visible.forEach(activity => {
       const isScheduled = activity.dateId !== null;
       const el = createActivityElement(activity, { compact: false });
-      if (daughterRatingMode && isScheduled) {
+      if (editableScheduledMode && isScheduled) {
         el.setAttribute('draggable', 'false');
-        el.title = `Scheduled on ${activity.dateId.replace('-', ' ')} · click to rate or edit`;
+        const actionHint = quickFilter === 'scheduled' ? 'click to edit details' : 'click to rate or edit';
+        el.title = `Scheduled on ${activity.dateId.replace('-', ' ')} · ${actionHint}`;
       } else if (statusFilter === 'all' && isScheduled) {
         el.classList.add('scheduled-in-pool');
         el.setAttribute('draggable', 'false');
