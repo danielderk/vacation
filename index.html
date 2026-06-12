@@ -1275,8 +1275,9 @@
       top: 18px;
       right: 18px;
       bottom: 18px;
-      width: min(430px, calc(100vw - 36px));
-      max-width: 430px;
+      left: 18px;
+      width: auto;
+      max-width: none;
       max-height: calc(100vh - 36px);
       overflow: auto;
       z-index: 42;
@@ -1300,6 +1301,14 @@
     .app-container.pool-open .sidebar-backdrop {
       opacity: 1;
       pointer-events: auto;
+    }
+
+    .app-container.pool-open {
+      display: block;
+    }
+
+    .app-container.pool-open .calendar-container {
+      display: none;
     }
 
     .app-container.pool-open .sidebar {
@@ -1331,7 +1340,8 @@
       top: 12px;
       right: 12px;
       bottom: 12px;
-      width: calc(100vw - 24px);
+      left: 12px;
+      width: auto;
       max-height: calc(100vh - 24px);
     }
 
@@ -5761,6 +5771,16 @@
     toggle.setAttribute('aria-expanded', String(isOpen));
   }
 
+  function updateCompactCalendarState() {
+    const layout = document.getElementById('plannerLayout');
+    const calendar = document.querySelector('.calendar-container');
+    if (!layout || !calendar) return;
+    const hideCalendar = isCompactPoolMode() && layout.classList.contains('pool-open');
+    calendar.hidden = hideCalendar;
+    calendar.setAttribute('aria-hidden', String(hideCalendar));
+    document.body.classList.toggle('pool-mobile-active', hideCalendar);
+  }
+
   function togglePoolDrawer(forceState) {
     const layout = document.getElementById('plannerLayout');
     if (!layout) return;
@@ -5772,6 +5792,7 @@
       layout.classList.remove('pool-open');
       layout.classList.toggle('pool-collapsed', !shouldOpen);
     }
+    updateCompactCalendarState();
     syncPoolDrawerButton();
   }
 
@@ -5784,6 +5805,7 @@
         layout.classList.remove('pool-open');
       }
     }
+    updateCompactCalendarState();
     syncPoolDrawerButton();
   });
 
@@ -5794,6 +5816,7 @@
     renderCalendar();
     updateSummary();
     updateDailyQuote();
+    updateCompactCalendarState();
     syncPoolDrawerButton();
   };
 </script>
