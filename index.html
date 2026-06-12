@@ -1598,6 +1598,7 @@
         <div class="picker-launch-row">
           <div class="selected-icon-preview"><span class="icon-glyph" id="selectedIconPreview">—</span><span id="selectedIconLabel">No icon selected</span></div>
           <button type="button" class="btn btn-secondary" onclick="openIconPicker()">Choose Icon</button>
+          <button type="button" class="btn btn-primary" onclick="saveModal()">Save Details</button>
         </div>
       </div>
       <div class="form-group full">
@@ -1703,6 +1704,7 @@
   let selectedModalIcon = '';
   let selectedLillianRating = null;
   let selectedLizzieRating = null;
+  let modalInitialState = null;
   let currentQuoteIndex = 0;
 
   const STORAGE_KEYS = {
@@ -5096,6 +5098,30 @@
     if (input) input.value = '';
   }
 
+  function getCurrentModalState() {
+    const modalId = document.getElementById('modalId');
+    if (!modalId) return null;
+    return JSON.stringify({
+      id: modalId.value || '',
+      text: document.getElementById('modalName')?.value || '',
+      category: document.getElementById('modalCategory')?.value || '',
+      condition: document.getElementById('modalCondition')?.value || '',
+      location: document.getElementById('modalLocation')?.value || '',
+      time: document.getElementById('modalTime')?.value || '',
+      supplies: document.getElementById('modalSupplies')?.value || '',
+      tools: document.getElementById('modalTools')?.value || '',
+      instructions: document.getElementById('modalInstructions')?.value || '',
+      date: document.getElementById('modalDate')?.value || '',
+      icon: selectedModalIcon || '',
+      lillianRating: selectedLillianRating ?? null,
+      lizzieRating: selectedLizzieRating ?? null
+    });
+  }
+
+  function hasUnsavedModalChanges() {
+    return modalInitialState !== null && modalInitialState !== getCurrentModalState();
+  }
+
   function getAverageRating(activity) {
     const hasLillian = activity.lillianRating !== null && activity.lillianRating !== undefined && activity.lillianRating !== '';
     const hasLizzie = activity.lizzieRating !== null && activity.lizzieRating !== undefined && activity.lizzieRating !== '';
@@ -5342,10 +5368,19 @@
     selectedLizzieRating = activity.lizzieRating ?? null;
     updateSelectedIconPreview();
     renderModalRatings();
+    modalInitialState = getCurrentModalState();
     document.getElementById('activityModal').style.display = 'flex';
   }
 
-  function closeModal() {
+  function closeModal(forceClose = false) {
+    if (!forceClose && hasUnsavedModalChanges()) {
+      const shouldSave = window.confirm('You have unsaved changes. Save them before closing?');
+      if (shouldSave) {
+        saveModal();
+      }
+      return;
+    }
+    modalInitialState = null;
     document.getElementById('activityModal').style.display = 'none';
   }
 
@@ -5368,7 +5403,8 @@
     }
 
     saveActivitiesState();
-    closeModal();
+    modalInitialState = getCurrentModalState();
+    closeModal(true);
     renderPool();
     renderCalendar();
     updateSummary();
