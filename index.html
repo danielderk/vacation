@@ -449,6 +449,62 @@
     min-height: 0;
   }
 
+  .sidebar-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .sidebar-header-row > div {
+    min-width: 0;
+  }
+
+  .pool-toggle,
+  .sidebar-close-btn {
+    border: 0;
+    border-radius: 999px;
+    background: var(--artifact-primary-highlight);
+    color: var(--artifact-background);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--artifact-shadow-soft);
+    transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+  }
+
+  .pool-toggle:hover,
+  .sidebar-close-btn:hover {
+    background: var(--artifact-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .pool-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 45;
+    padding: 14px 18px;
+  }
+
+  .sidebar-close-btn {
+    display: none;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+  }
+
   .sidebar-copy {
     color: var(--artifact-text-secondary);
     font-size: 14px;
@@ -1095,7 +1151,104 @@
     }
   }
 
-  @media print {
+    @media screen and (max-width: 1180px) {
+    body {
+      padding: 18px;
+    }
+
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-container {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .pool-toggle {
+      display: inline-flex;
+    }
+
+    .sidebar-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: color-mix(in srgb, var(--artifact-primary-highlight) 20%, transparent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+      z-index: 41;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: min(430px, calc(100vw - 36px));
+      max-width: 430px;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      z-index: 42;
+      transform: translateX(calc(100% + 28px));
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .sidebar-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app-container.pool-open .sidebar-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .app-container.pool-open .sidebar {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .app-container.pool-open .pool-toggle {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+    }
+  }
+
+  @media screen and (max-width: 720px) {
+    body {
+      padding: 14px;
+    }
+
+    .pool-toggle {
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      width: calc(100vw - 28px);
+    }
+
+    .sidebar {
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      width: calc(100vw - 24px);
+      max-height: calc(100vh - 24px);
+    }
+
+    .sidebar,
+    .hero-card,
+    .summary-card,
+    .month {
+      border-radius: 22px;
+    }
+  }
+
+@media print {
     body {
       margin: 0;
       padding: 0.4in 0.6in;
@@ -1218,7 +1371,9 @@
     </aside>
   </section>
 
-  <div class="app-container">
+  <div class="app-container" id="plannerLayout">
+    <button class="pool-toggle" id="poolToggle" type="button" onclick="togglePoolDrawer()" aria-expanded="false" aria-controls="activitiesSidebar">Activities Pool</button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="togglePoolDrawer(false)"></div>
     <main class="calendar-container">
       <section class="month">
         <div class="month-header">
@@ -1257,10 +1412,13 @@
       </section>
     </main>
 
-    <aside class="sidebar">
-      <div>
-        <h2>Activities Pool</h2>
-        <p class="sidebar-copy">Browse everything, search by keyword, or use a quick view to surface low-prep family ideas fast.</p>
+    <aside class="sidebar" id="activitiesSidebar">
+      <div class="sidebar-header-row">
+        <div>
+          <h2>Activities Pool</h2>
+          <p class="sidebar-copy">Browse everything, search by keyword, or use a quick view to surface low-prep family ideas fast.</p>
+        </div>
+        <button class="sidebar-close-btn" type="button" onclick="togglePoolDrawer(false)" aria-label="Close Activities Pool">×</button>
       </div>
 
       <div class="toolbar-row">
@@ -5410,6 +5568,36 @@
     }
   });
 
+  function syncPoolDrawerButton() {
+    const layout = document.getElementById('plannerLayout');
+    const toggle = document.getElementById('poolToggle');
+    if (!layout || !toggle) return;
+    const isOpen = layout.classList.contains('pool-open');
+    const compactMode = window.innerWidth <= 1180;
+    toggle.textContent = compactMode ? (isOpen ? 'Hide Activities Pool' : 'Open Activities Pool') : 'Activities Pool';
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  }
+
+  function togglePoolDrawer(forceState) {
+    const layout = document.getElementById('plannerLayout');
+    if (!layout) return;
+    const shouldOpen = typeof forceState === 'boolean' ? forceState : !layout.classList.contains('pool-open');
+    if (window.innerWidth > 1180) {
+      layout.classList.remove('pool-open');
+    } else {
+      layout.classList.toggle('pool-open', shouldOpen);
+    }
+    syncPoolDrawerButton();
+  }
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 1180) {
+      const layout = document.getElementById('plannerLayout');
+      if (layout) layout.classList.remove('pool-open');
+    }
+    syncPoolDrawerButton();
+  });
+
   window.onload = () => {
     buildIconCategoryOptions();
     initCalendars();
@@ -5417,6 +5605,7 @@
     renderCalendar();
     updateSummary();
     updateDailyQuote();
+    syncPoolDrawerButton();
   };
 </script>
 
